@@ -31,6 +31,9 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
+
+    implementation("io.grpc:grpc-kotlin-stub")
 
     testImplementation("jakarta.annotation:jakarta.annotation-api")
     testImplementation("net.javacrumbs.json-unit:json-unit-fluent")
