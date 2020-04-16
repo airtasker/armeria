@@ -3,17 +3,34 @@ package example.armeria.grpc.kotlin
 import example.armeria.grpc.kotlin.Hello.HelloReply
 import example.armeria.grpc.kotlin.Hello.HelloRequest
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 
 class HelloServiceImpl : HelloServiceGrpcKt.HelloServiceCoroutineImplBase() {
+
+    /**
+     * Sends a {@link HelloReply} immediately when receiving a request.
+     */
     override suspend fun hello(request: HelloRequest): HelloReply = buildReply(toMessage(request.name))
 
-    override suspend fun lazyHello(request: Hello.HelloRequest): Hello.HelloReply {
-        delay(3000)
+    /**
+     * Sends a {@link HelloReply} 3 seconds after receiving a request.
+     */
+    override suspend fun lazyHello(request: HelloRequest): HelloReply {
+        delay(3_000)
         return buildReply(toMessage(request.name))
     }
 
+    /**
+     * Sends a {@link HelloReply} using {@code blockingTaskExecutor}.
+     *
+     * @see <a href="https://line.github.io/armeria/server-grpc.html#blocking-service-implementation">Blocking
+     *      service implementation</a>
+     */
     override suspend fun blockingHello(request: HelloRequest): HelloReply {
         return runBlocking {
                 try { // Simulate a blocking API call.
@@ -24,7 +41,12 @@ class HelloServiceImpl : HelloServiceGrpcKt.HelloServiceCoroutineImplBase() {
         }
     }
 
-    override fun lotsOfReplies(request: Hello.HelloRequest): Flow<Hello.HelloReply> =
+    /**
+     * Sends 5 {@link HelloReply} responses when receiving a request.
+     *
+     * @see #lazyHello(HelloRequest, StreamObserver)
+     */
+    override fun lotsOfReplies(request: HelloRequest): Flow<HelloReply> =
         flow {
             for (i in 1..5) {
                 delay(1000)
@@ -32,7 +54,10 @@ class HelloServiceImpl : HelloServiceGrpcKt.HelloServiceCoroutineImplBase() {
             }
         }
 
-    override suspend fun lotsOfGreetings(requests: Flow<Hello.HelloRequest>): Hello.HelloReply {
+    /**
+     * Sends a {@link HelloReply} when a request has been completed with multiple {@link HelloRequest}s.
+     */
+    override suspend fun lotsOfGreetings(requests: Flow<HelloRequest>): HelloReply {
         val s =  mutableListOf<String>()
         requests
             .map { request -> request.name }
@@ -41,6 +66,10 @@ class HelloServiceImpl : HelloServiceGrpcKt.HelloServiceCoroutineImplBase() {
         return buildReply(toMessage(s.joinToString()))
     }
 
+    /**
+     * Sends a {@link HelloReply} when each {@link HelloRequest} is received. The response will be completed
+     * when the request is completed.
+     */
     override fun bidiHello(requests: Flow<HelloRequest>): Flow<HelloReply>  = flow {
         requests.collect { request ->
             emit(buildReply(toMessage(request.name)))
